@@ -6,8 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { AuthSession, getStoredSession, logoutAdmin } from "@/app/lib/api";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/enquiries", label: "Enquiries" },
+  { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/enquiries", label: "Enquiries", icon: "📩" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -24,21 +24,32 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
+  const userInitial = session?.fullName
+    ? session.fullName.charAt(0).toUpperCase()
+    : session?.username
+    ? session.username.charAt(0).toUpperCase()
+    : "A";
+
   return (
     <div className="admin-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <div className="brand-mark">A</div>
-          <div>
-            <p className="eyebrow">Admin Panel</p>
-            <h2>Appixo</h2>
-          </div>
+          <Link href="/dashboard">
+            <img
+              src="/appixo-logo-full.png"
+              alt="Appixo Technologies"
+              className="brand-sidebar-logo"
+            />
+          </Link>
         </div>
 
         {session ? (
           <div className="admin-user-info">
-            <strong>{session.fullName || session.username}</strong>
-            <span>{session.role ? session.role.replace("_", " ") : "Administrator"}</span>
+            <div className="admin-avatar">{userInitial}</div>
+            <div className="admin-user-details">
+              <strong>{session.fullName || session.username}</strong>
+              <span>{session.role ? session.role.replace("_", " ") : "Administrator"}</span>
+            </div>
           </div>
         ) : null}
 
@@ -47,15 +58,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className={pathname === item.href ? "nav-link active" : "nav-link"}
+              className={pathname === item.href || (item.href === "/enquiries" && pathname.startsWith("/enquiries")) ? "nav-link active" : "nav-link"}
             >
-              {item.label}
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
 
         <button type="button" className="logout-button" onClick={handleLogout}>
-          Logout
+          <span>🚪</span> Logout
         </button>
       </aside>
 

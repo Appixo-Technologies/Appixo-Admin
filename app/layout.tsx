@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Appixo Admin",
-  description: "Simple admin login dashboard and enquiry management module",
+  title: "Appixo Technologies | Admin Console",
+  description: "Official Appixo Technologies Admin Dashboard and Enquiry Management System",
+  icons: {
+    icon: "/appixo-mark.png",
+    shortcut: "/appixo-mark.png",
+    apple: "/appixo-mark.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

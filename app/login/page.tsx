@@ -36,13 +36,22 @@ export default function LoginPage() {
     }
   };
 
+  const handleFillDemo = () => {
+    setUsername(DEFAULT_USER);
+    setPassword(DEFAULT_PASSWORD);
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="brand-mark large">A</div>
-          <h1>Admin Login</h1>
-          <p>Sign in to manage enquiries and live dashboard insights.</p>
+          <img
+            src="/appixo-logo-full.png"
+            alt="Appixo Technologies"
+            className="auth-logo-img"
+          />
+          <h1>Admin Console</h1>
+          <p>Sign in to access live enquiries and analytics.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -64,21 +73,32 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="admin123"
+              placeholder="••••••••"
               required
               disabled={isLoading}
             />
           </label>
 
-          {error ? <p className="error-message">{error}</p> : null}
+          {error ? (
+            <div style={{ color: "#ef4444", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", padding: "10px 14px", borderRadius: 10, fontSize: "0.88rem" }}>
+              ⚠️ {error}
+            </div>
+          ) : null}
 
           <button type="submit" className="primary-button" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Login"}
+            {isLoading ? (
+              <>
+                <span className="spinner" style={{ width: 18, height: 18 }} />
+                Signing in...
+              </>
+            ) : (
+              "Sign In →"
+            )}
           </button>
         </form>
 
-        <div className="demo-box">
-          <span>Live Demo Credentials</span>
+        <div className="demo-box" onClick={handleFillDemo} style={{ cursor: "pointer" }} title="Click to fill demo credentials">
+          <span>Demo Credentials</span>
           <strong>admin / admin123</strong>
         </div>
       </div>

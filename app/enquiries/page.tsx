@@ -71,26 +71,28 @@ export default function EnquiriesPage() {
       <AdminShell>
         <div className="page-header">
           <div>
-            <p className="eyebrow">Management</p>
-            <h1>Enquiries</h1>
+            <p className="eyebrow">Lead Directory</p>
+            <h1>Client Enquiries</h1>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button
               type="button"
               onClick={fetchEnquiries}
               className="secondary-button"
-              style={{ padding: "8px 14px", fontSize: "0.85rem" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               disabled={loading}
             >
-              ↻ Refresh
+              🔄 Refresh
             </button>
-            <span className="pill">{filteredEnquiries.length} of {enquiries.length}</span>
+            <span className="pill">
+              {filteredEnquiries.length} / {enquiries.length} Enquiries
+            </span>
           </div>
         </div>
 
         {error ? (
-          <div style={{ marginBottom: 20, color: "var(--danger)", background: "#fee", padding: 14, borderRadius: 10 }}>
-            {error}
+          <div style={{ marginBottom: 24, color: "#ef4444", background: "rgba(239, 68, 68, 0.12)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: 16, borderRadius: 14 }}>
+            ⚠️ {error}
           </div>
         ) : null}
 
@@ -104,28 +106,29 @@ export default function EnquiriesPage() {
                   className={`filter-btn ${activeFilter === f ? "active" : ""}`}
                   onClick={() => setActiveFilter(f)}
                 >
-                  {f === "all" ? "All" : f}
+                  {f === "all" ? "All Statuses" : f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
               ))}
             </div>
 
             <input
               type="text"
-              placeholder="Search by name, email, company..."
+              placeholder="🔍 Search name, email, company..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="search-input"
+              style={{ minWidth: 280 }}
             />
           </div>
 
           {loading ? (
             <div className="loading-state">
               <div className="spinner" />
-              <p>Fetching enquiries from backend...</p>
+              <p>Fetching enquiries from backend server...</p>
             </div>
           ) : filteredEnquiries.length === 0 ? (
             <div className="empty-state">
-              <p>No enquiries found matching your criteria.</p>
+              <p>No enquiries found matching your search or status filter.</p>
             </div>
           ) : (
             <div className="table-wrap">
@@ -133,18 +136,20 @@ export default function EnquiriesPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Name</th>
-                    <th>Email / Phone</th>
+                    <th>Full Name</th>
+                    <th>Email / Contact</th>
                     <th>Company</th>
-                    <th>Inquiry Type</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
+                    <th>Inquiry Category</th>
+                    <th>Current Status</th>
+                    <th>Submission Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEnquiries.map((enquiry) => (
                     <tr key={enquiry.enquiryId}>
-                      <td>#{enquiry.enquiryId}</td>
+                      <td style={{ color: "var(--text-subtle)", fontFamily: "monospace" }}>
+                        #{enquiry.enquiryId}
+                      </td>
                       <td>
                         <Link
                           href={`/enquiries/${enquiry.enquiryId}`}
@@ -154,13 +159,19 @@ export default function EnquiriesPage() {
                         </Link>
                       </td>
                       <td>
-                        <div>{enquiry.email}</div>
+                        <div style={{ color: "var(--text-main)" }}>{enquiry.email}</div>
                         {enquiry.phone ? (
-                          <small style={{ color: "var(--muted)" }}>{enquiry.phone}</small>
+                          <small style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                            {enquiry.phone}
+                          </small>
                         ) : null}
                       </td>
-                      <td>{enquiry.company || "—"}</td>
-                      <td>{enquiry.inquiryType || "General"}</td>
+                      <td style={{ color: enquiry.company ? "var(--text-main)" : "var(--text-subtle)" }}>
+                        {enquiry.company || "—"}
+                      </td>
+                      <td style={{ color: "var(--gold-light)", fontWeight: 500 }}>
+                        {enquiry.inquiryType || "General"}
+                      </td>
                       <td>
                         <span
                           className={`status-badge ${enquiry.status.toLowerCase()}`}
@@ -168,7 +179,9 @@ export default function EnquiriesPage() {
                           {enquiry.status}
                         </span>
                       </td>
-                      <td>{formatDate(enquiry.submittedAt)}</td>
+                      <td style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>
+                        {formatDate(enquiry.submittedAt)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
