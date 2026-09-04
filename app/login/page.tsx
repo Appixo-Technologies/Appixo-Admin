@@ -1,18 +1,22 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { loginAdmin, isSessionValid } from "@/app/lib/api";
 
-const DEFAULT_USER = "admin";
-const DEFAULT_PASSWORD = "admin123";
+const MAX_FAILED_ATTEMPTS = 3;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState(DEFAULT_USER);
-  const [password, setPassword] = useState(DEFAULT_PASSWORD);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   useEffect(() => {
     if (isSessionValid()) {
@@ -20,87 +24,161 @@ export default function LoginPage() {
     }
   }, [router]);
 
+  // Handle brute-force cooldown timer
+  useEffect(() => {
+    if (lockoutTimer > 0) {
+      const timer = setTimeout(() => setLockoutTimer((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [lockoutTimer]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (lockoutTimer > 0) return;
+
     setError("");
     setIsLoading(true);
 
     try {
       await loginAdmin(username.trim(), password);
+      setFailedAttempts(0);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to sign in";
-      setError(message);
+      const newFailCount = failedAttempts + 1;
+      setFailedAttempts(newFailCount);
+
+      if (newFailCount >= MAX_FAILED_ATTEMPTS) {
+        setLockoutTimer(15);
+        setError("Too many failed attempts. Login locked for 15 seconds to prevent brute-force.");
+      } else {
+        const message = err instanceof Error ? err.message : "Invalid credentials. Please check and try again.";
+        setError(message);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFillDemo = () => {
-    setUsername(DEFAULT_USER);
-    setPassword(DEFAULT_PASSWORD);
-  };
-
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-header">
-          <img
-            src="/appixo-logo-full.png"
-            alt="Appixo Technologies"
-            className="auth-logo-img"
-          />
-          <h1>Admin Console</h1>
-          <p>Sign in to access live enquiries and analytics.</p>
-        </div>
-
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
-            Username or Email
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin or admin@appixo.com"
-              required
-              disabled={isLoading}
-            />
-          </label>
-
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              disabled={isLoading}
-            />
-          </label>
-
-          {error ? (
-            <div style={{ color: "#ef4444", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", padding: "10px 14px", borderRadius: 10, fontSize: "0.88rem" }}>
-              ⚠️ {error}
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="logo-wrapper">
+              <Image
+                src="/appixo-logo-full.png"
+                alt="Appixo Technologies"
+                width={240}
+                height={50}
+                priority
+                style={{ width: "auto", height: "auto" }}
+                className="auth-logo-img"
+              />
             </div>
-          ) : null}
+            <div className="auth-badge">ADMIN CONSOLE</div>
+            <h1>Secure Portal Sign In</h1>
+            <p>Enter your administrative credentials to access live leads and system insights.</p>
+          </div>
 
-          <button type="submit" className="primary-button" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <span className="spinner" style={{ width: 18, height: 18 }} />
-                Signing in...
-              </>
-            ) : (
-              "Sign In →"
-            )}
-          </button>
-        </form>
+          <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
+            <div className="input-group">
+              <label htmlFor="admin-username">Username or Email</label>
+              <div className="input-wrapper">
+                <span className="input-icon">👤</span>
+                <input
+                  id="admin-username"
+                  name="admin-username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username or email"
+                  required
+                  disabled={isLoading || lockoutTimer > 0}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
 
-        <div className="demo-box" onClick={handleFillDemo} style={{ cursor: "pointer" }} title="Click to fill demo credentials">
-          <span>Demo Credentials</span>
-          <strong>admin / admin123</strong>
+            <div className="input-group">
+              <label htmlFor="admin-password">Password</label>
+              <div className="input-wrapper">
+                <span className="input-icon">🔒</span>
+                <input
+                  id="admin-password"
+                  name="admin-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isLoading || lockoutTimer > 0}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            <div className="form-meta">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span>Remember session</span>
+              </label>
+              <span className="security-tag">🔒 256-Bit SSL</span>
+            </div>
+
+            {error ? (
+              <div className="auth-error-alert" role="alert">
+                <span className="alert-icon">⚠️</span>
+                <span>{error}</span>
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              className="primary-button login-btn"
+              disabled={isLoading || lockoutTimer > 0}
+            >
+              {lockoutTimer > 0 ? (
+                `Locked (${lockoutTimer}s)`
+              ) : isLoading ? (
+                <>
+                  <span className="spinner" style={{ width: 18, height: 18 }} />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  Sign In to Dashboard
+                  <span className="btn-arrow">→</span>
+                </>
+              )}
+            </button>
+          </form>
         </div>
+
+        <footer className="auth-footer">
+          <p>© {new Date().getFullYear()} Appixo Technologies. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="https://appixotech.com" target="_blank" rel="noreferrer">
+              Official Site ↗
+            </a>
+            <span className="dot">•</span>
+            <span className="system-status">
+              <span className="status-dot green" /> Systems Operational
+            </span>
+          </div>
+        </footer>
       </div>
     </div>
   );

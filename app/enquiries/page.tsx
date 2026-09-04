@@ -78,11 +78,24 @@ export default function EnquiriesPage() {
             <button
               type="button"
               onClick={fetchEnquiries}
-              className="secondary-button"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              className={`refresh-btn ${loading ? "spinning" : ""}`}
               disabled={loading}
+              title="Refresh live enquiries"
             >
-              🔄 Refresh
+              <svg
+                className="refresh-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21.5 2v6h-6" />
+                <path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              <span>{loading ? "Syncing..." : "Refresh"}</span>
             </button>
             <span className="pill">
               {filteredEnquiries.length} / {enquiries.length} Enquiries
@@ -111,14 +124,40 @@ export default function EnquiriesPage() {
               ))}
             </div>
 
-            <input
-              type="text"
-              placeholder="🔍 Search name, email, company..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="search-input"
-              style={{ minWidth: 280 }}
-            />
+            <div className="search-box-wrapper">
+              <svg
+                className="search-box-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search name, email, company..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-box-input"
+              />
+              {search ? (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setSearch("")}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              ) : (
+                <span className="search-shortcut">⌘K</span>
+              )}
+            </div>
           </div>
 
           {loading ? (

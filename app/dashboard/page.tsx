@@ -11,31 +11,22 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
-    async function loadData() {
-      try {
-        setLoading(true);
-        const data = await getEnquiriesList();
-        if (mounted) {
-          setEnquiries(data);
-        }
-      } catch (err: unknown) {
-        if (mounted) {
-          const message = err instanceof Error ? err.message : "Failed to load dashboard data";
-          setError(message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getEnquiriesList();
+      setEnquiries(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load dashboard data";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadData();
-    return () => {
-      mounted = false;
-    };
+  useEffect(() => {
+    refreshData();
   }, []);
 
   const totalCount = enquiries.length;
@@ -60,7 +51,7 @@ export default function DashboardPage() {
     { label: "Resolved / Closed", value: resolvedCount, trend: "✅ Completed", icon: "✨" },
   ];
 
-  // Latest 4 enquiries sorted by submission date descending
+  // Latest 5 enquiries sorted by submission date descending
   const recentEnquiries = [...enquiries]
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
     .slice(0, 5);
@@ -73,9 +64,33 @@ export default function DashboardPage() {
             <p className="eyebrow">Insights & Performance</p>
             <h1>Dashboard Overview</h1>
           </div>
-          <Link href="/enquiries" className="primary-button">
-            View All Enquiries →
-          </Link>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={refreshData}
+              className={`refresh-btn ${loading ? "spinning" : ""}`}
+              disabled={loading}
+              title="Refresh dashboard insights"
+            >
+              <svg
+                className="refresh-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21.5 2v6h-6" />
+                <path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              <span>{loading ? "Syncing..." : "Refresh"}</span>
+            </button>
+            <Link href="/enquiries" className="primary-button">
+              View All Enquiries →
+            </Link>
+          </div>
         </div>
 
         {error ? (
