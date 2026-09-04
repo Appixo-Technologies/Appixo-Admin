@@ -22,10 +22,10 @@ A modern admin control panel for managing client enquiries, communications, and 
 
 ## Environment Variables
 
-Configure the API base URL in `.env.local` for local development or within your hosting provider's environment settings:
+Copy `.env.example` to `.env.local` and set your backend API base URL:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://appixo-backend.onrender.com
+NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.com
 ```
 
 ---
