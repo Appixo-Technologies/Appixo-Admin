@@ -1,22 +1,28 @@
 # Appixo Admin Dashboard
 
-Modern admin panel for managing enquiries, client communications, and platform metrics, connected to the Appixo backend.
+A modern admin control panel for managing client enquiries, communications, and platform metrics for Appixo Technologies.
 
-- **Backend Base URL:** `https://appixo-backend.onrender.com`
-- **Frontend Framework:** Next.js 16 (App Router, Turbopack, React 19)
+## Features
+
+- **Lead & Enquiry Management**: Filter, search, and review incoming client project inquiries in real-time.
+- **Status Workflows**: Update enquiry lifecycle statuses (Pending, In Progress, Resolved, Closed).
+- **Secure Authentication**: JWT-based session management with role-based access control.
+- **Full Device Responsiveness**: Optimized layout across mobile, tablet, and desktop viewports.
 
 ---
 
-## Live Demo Credentials
+## Tech Stack
 
-- **Username / Email:** `admin` or `admin@appixo.com`
-- **Password:** `admin123`
+- **Framework**: Next.js 16 (App Router, Turbopack, React 19)
+- **Language**: TypeScript
+- **Styling**: Custom CSS Design System
+- **Backend Integration**: REST API via `NEXT_PUBLIC_API_BASE_URL`
 
 ---
 
 ## Environment Variables
 
-Configure the backend URL in `.env.local` for local development or in Vercel's Project Settings for production:
+Configure the API base URL in `.env.local` for local development or within your hosting provider's environment settings:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://appixo-backend.onrender.com
@@ -27,39 +33,31 @@ NEXT_PUBLIC_API_BASE_URL=https://appixo-backend.onrender.com
 ## Local Development
 
 ```bash
-# Install dependencies
+# Install project dependencies
 npm install
 
-# Run the dev server
+# Start local development server
 npm run dev
 
-# Run production build
+# Create optimized production build
 npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the admin panel.
+Open [http://localhost:3000](http://localhost:3000) in your browser to access the admin portal.
 
 ---
 
-## Deploying to Vercel
+## Deployment (Vercel)
 
-### Option 1: Git-Connected Deployment (Recommended)
-
-1. Push this repository to GitHub:
+1. Push changes to your Git repository:
    ```bash
    git add .
-   git commit -m "feat: integrate Render backend and prepare for Vercel deployment"
-   git push -u origin main
+   git commit -m "build: prepare for deployment"
+   git push origin main
    ```
-2. Go to [vercel.com/new](https://vercel.com/new) and import the `appixo_admin` repository.
-3. In **Environment Variables**, add:
+2. Import the project into [Vercel](https://vercel.com/new).
+3. In **Environment Variables**, set:
    - **Key:** `NEXT_PUBLIC_API_BASE_URL`
    - **Value:** `https://appixo-backend.onrender.com`
 4. Click **Deploy**.
 
-### Option 2: Deploy via Vercel CLI
-
-```bash
-npx vercel
-```
-Follow the prompts and add the `NEXT_PUBLIC_API_BASE_URL` environment variable when prompted or in the Vercel dashboard.

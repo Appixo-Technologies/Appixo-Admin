@@ -15,10 +15,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setSession(getStoredSession());
   }, []);
+
+  // Auto-close mobile drawer on route navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logoutAdmin();
@@ -32,8 +38,51 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     : "A";
 
   return (
-    <div className="admin-shell">
-      <aside className="sidebar">
+    <div className={`admin-shell ${isMobileMenuOpen ? "mobile-open" : ""}`}>
+      {/* Mobile Top Header Bar */}
+      <header className="mobile-header">
+        <Link href="/dashboard" className="mobile-brand-link">
+          <Image
+            src="/appixo-mark.png"
+            alt="Appixo Technologies"
+            width={32}
+            height={32}
+            priority
+          />
+          <span className="mobile-brand-title">
+            APPI<span className="gold-x">X</span>O
+          </span>
+        </Link>
+        <button
+          type="button"
+          className="mobile-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle Navigation Menu"
+        >
+          {isMobileMenuOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          )}
+        </button>
+      </header>
+
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen ? (
+        <div
+          className="mobile-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      ) : null}
+
+      <aside className={`sidebar ${isMobileMenuOpen ? "open" : ""}`}>
         <div className="brand-block">
           <Link href="/dashboard" className="brand-link">
             <Image
@@ -104,3 +153,4 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
