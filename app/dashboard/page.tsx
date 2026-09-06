@@ -51,10 +51,15 @@ export default function DashboardPage() {
     { label: "Resolved / Closed", value: resolvedCount, trend: "✅ Completed", icon: "✨" },
   ];
 
-  // Latest 5 enquiries sorted by submission date descending
+  // Latest 6 enquiries sorted by submission date descending (newest first)
   const recentEnquiries = [...enquiries]
-    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-    .slice(0, 5);
+    .sort((a, b) => {
+      const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+      const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return b.enquiryId - a.enquiryId;
+    })
+    .slice(0, 6);
 
   return (
     <AuthGuard>
@@ -99,6 +104,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
+        {/* Platform Overview Metrics */}
         <div className="stats-grid">
           {stats.map((stat) => (
             <div key={stat.label} className="stat-card">
@@ -112,10 +118,16 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Recent Enquiries & Quick Actions */}
         <div className="panel-grid">
           <section className="panel">
             <div className="panel-header">
-              <h3>Recent Enquiries</h3>
+              <div>
+                <h3>Recent Enquiries</h3>
+                <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  Latest client submissions sorted by newest first
+                </p>
+              </div>
               <Link href="/enquiries">View All ({totalCount}) →</Link>
             </div>
 
@@ -141,11 +153,19 @@ export default function DashboardPage() {
                       <p>
                         {enquiry.inquiryType || "General Service"}
                         {enquiry.company ? ` • ${enquiry.company}` : ""}
+                        {enquiry.email ? ` • ${enquiry.email}` : ""}
                       </p>
                     </div>
-                    <span className={`status-badge ${enquiry.status.toLowerCase()}`}>
-                      {enquiry.status}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {!enquiry.isRead ? (
+                        <span className="read-status-badge unread">● NEW</span>
+                      ) : (
+                        <span className="read-status-badge read">Read</span>
+                      )}
+                      <span className={`status-badge ${enquiry.status.toLowerCase()}`}>
+                        {enquiry.status}
+                      </span>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -188,3 +208,4 @@ export default function DashboardPage() {
     </AuthGuard>
   );
 }
+

@@ -11,6 +11,7 @@ export interface Enquiry {
   projectContext?: string | null;
   submittedAt: string;
   status: string;
+  isRead?: boolean;
 }
 
 export interface AdminUser {
@@ -198,6 +199,19 @@ export async function updateEnquiryStatus(
   }>(`/api/admin/enquiries/${enquiryId}/status`, {
     method: "PUT",
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function updateEnquiryReadStatus(
+  enquiryId: string | number,
+  isRead: boolean = true
+): Promise<void> {
+  await apiRequest<{
+    message: string;
+    data: unknown;
+  }>(`/api/admin/enquiries/${enquiryId}/read`, {
+    method: "PUT",
+    body: JSON.stringify({ isRead }),
   });
 }
 

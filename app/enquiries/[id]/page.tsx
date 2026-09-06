@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { AuthGuard } from "@/app/components/AuthGuard";
 import { AdminShell } from "@/app/components/AdminShell";
-import { Enquiry, getEnquiryDetails, updateEnquiryStatus } from "@/app/lib/api";
+import { Enquiry, getEnquiryDetails, updateEnquiryStatus, updateEnquiryReadStatus } from "@/app/lib/api";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
@@ -26,6 +26,8 @@ export default function EnquiryDetailPage({
   const [error, setError] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isReadState, setIsReadState] = useState(true);
+  const [isTogglingRead, setIsTogglingRead] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function EnquiryDetailPage({
         if (mounted) {
           setEnquiry(data);
           setSelectedStatus(data.status);
+          setIsReadState(data.isRead ?? true);
         }
       } catch (err: unknown) {
         if (mounted) {
@@ -78,6 +81,26 @@ export default function EnquiryDetailPage({
     }
   };
 
+  const handleReadToggle = async () => {
+    const nextState = !isReadState;
+    setIsTogglingRead(true);
+    setError("");
+    try {
+      await updateEnquiryReadStatus(enquiryId, nextState);
+      setIsReadState(nextState);
+      if (enquiry) {
+        setEnquiry({ ...enquiry, isRead: nextState });
+      }
+      setSuccessMessage(`Marked as ${nextState ? "Read" : "Unread"}`);
+      setTimeout(() => setSuccessMessage(""), 3500);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to toggle read state";
+      setError(message);
+    } finally {
+      setIsTogglingRead(false);
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
     try {
@@ -99,12 +122,35 @@ export default function EnquiryDetailPage({
       <AdminShell>
         <div className="page-header">
           <div>
-            <p className="eyebrow">Enquiry #{enquiryId}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <p className="eyebrow" style={{ margin: 0 }}>Enquiry #{enquiryId}</p>
+              {!isReadState ? (
+                <span className="read-status-badge unread">● NEW</span>
+              ) : (
+                <span className="read-status-badge read">✓ Read</span>
+              )}
+            </div>
             <h1>{enquiry ? enquiry.inquiryType || "Client Enquiry Details" : "Enquiry Details"}</h1>
           </div>
-          <Link href="/enquiries" className="secondary-button">
-            ← Back to Enquiries
-          </Link>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button
+              type="button"
+              className="toggle-read-btn"
+              onClick={handleReadToggle}
+              disabled={isTogglingRead || loading}
+            >
+              {isTogglingRead ? (
+                <span className="spinner" style={{ width: 12, height: 12 }} />
+              ) : isReadState ? (
+                "Mark Unread"
+              ) : (
+                "Mark Read"
+              )}
+            </button>
+            <Link href="/enquiries" className="secondary-button">
+              ← Back to Enquiries
+            </Link>
+          </div>
         </div>
 
         {error ? (

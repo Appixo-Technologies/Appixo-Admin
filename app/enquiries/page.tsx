@@ -2,18 +2,21 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/app/components/AuthGuard";
 import { AdminShell } from "@/app/components/AdminShell";
-import { Enquiry, getEnquiriesList } from "@/app/lib/api";
+import { Enquiry, getEnquiriesList, updateEnquiryReadStatus } from "@/app/lib/api";
 
-const STATUS_FILTERS = ["all", "active", "pending", "in-progress", "resolved", "closed"] as const;
+const STATUS_FILTERS = ["all", "unread", "active", "pending", "in-progress", "resolved", "closed"] as const;
 
 export default function EnquiriesPage() {
+  const router = useRouter();
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [updatingIds, setUpdatingIds] = useState<number[]>([]);
 
   const fetchEnquiries = async () => {
     try {
@@ -33,23 +36,53 @@ export default function EnquiriesPage() {
     fetchEnquiries();
   }, []);
 
+  const handleToggleRead = async (enquiryId: number, currentIsRead?: boolean) => {
+    const targetState = !currentIsRead;
+    setUpdatingIds((prev) => [...prev, enquiryId]);
+    try {
+      await updateEnquiryReadStatus(enquiryId, targetState);
+      setEnquiries((prev) =>
+        prev.map((e) => (e.enquiryId === enquiryId ? { ...e, isRead: targetState } : e))
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update read status";
+      setError(message);
+    } finally {
+      setUpdatingIds((prev) => prev.filter((id) => id !== enquiryId));
+    }
+  };
+
+  const unreadCount = useMemo(() => {
+    return enquiries.filter((e) => !e.isRead).length;
+  }, [enquiries]);
+
   const filteredEnquiries = useMemo(() => {
-    return enquiries.filter((item) => {
-      const matchesFilter =
-        activeFilter === "all" ||
-        item.status.toLowerCase() === activeFilter.toLowerCase();
+    return enquiries
+      .filter((item) => {
+        const matchesFilter =
+          activeFilter === "all"
+            ? true
+            : activeFilter === "unread"
+            ? !item.isRead
+            : item.status.toLowerCase() === activeFilter.toLowerCase();
 
-      const query = search.toLowerCase().trim();
-      const matchesSearch =
-        !query ||
-        item.fullName?.toLowerCase().includes(query) ||
-        item.email?.toLowerCase().includes(query) ||
-        item.company?.toLowerCase().includes(query) ||
-        item.inquiryType?.toLowerCase().includes(query) ||
-        item.location?.toLowerCase().includes(query);
+        const query = search.toLowerCase().trim();
+        const matchesSearch =
+          !query ||
+          item.fullName?.toLowerCase().includes(query) ||
+          item.email?.toLowerCase().includes(query) ||
+          item.company?.toLowerCase().includes(query) ||
+          item.inquiryType?.toLowerCase().includes(query) ||
+          item.location?.toLowerCase().includes(query);
 
-      return matchesFilter && matchesSearch;
-    });
+        return matchesFilter && matchesSearch;
+      })
+      .sort((a, b) => {
+        const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+        const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        return b.enquiryId - a.enquiryId;
+      });
   }, [enquiries, activeFilter, search]);
 
   const formatDate = (dateString?: string) => {
@@ -97,6 +130,11 @@ export default function EnquiriesPage() {
               </svg>
               <span>{loading ? "Syncing..." : "Refresh"}</span>
             </button>
+            {unreadCount > 0 ? (
+              <span className="read-status-badge unread">
+                ● {unreadCount} NEW
+              </span>
+            ) : null}
             <span className="pill">
               {filteredEnquiries.length} / {enquiries.length} Enquiries
             </span>
@@ -119,7 +157,11 @@ export default function EnquiriesPage() {
                   className={`filter-btn ${activeFilter === f ? "active" : ""}`}
                   onClick={() => setActiveFilter(f)}
                 >
-                  {f === "all" ? "All Statuses" : f.charAt(0).toUpperCase() + f.slice(1)}
+                  {f === "all"
+                    ? "All Statuses"
+                    : f === "unread"
+                    ? `Unread (${unreadCount})`
+                    : f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
               ))}
             </div>
@@ -175,24 +217,38 @@ export default function EnquiriesPage() {
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>Message Status</th>
                     <th>Full Name</th>
                     <th>Email / Contact</th>
                     <th>Company</th>
                     <th>Inquiry Category</th>
                     <th>Current Status</th>
                     <th>Submission Date</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEnquiries.map((enquiry) => (
-                    <tr key={enquiry.enquiryId}>
+                    <tr
+                      key={enquiry.enquiryId}
+                      className="clickable-row"
+                      onClick={() => router.push(`/enquiries/${enquiry.enquiryId}`)}
+                    >
                       <td style={{ color: "var(--text-subtle)", fontFamily: "monospace" }}>
                         #{enquiry.enquiryId}
+                      </td>
+                      <td>
+                        {!enquiry.isRead ? (
+                          <span className="read-status-badge unread">● NEW</span>
+                        ) : (
+                          <span className="read-status-badge read">Read</span>
+                        )}
                       </td>
                       <td>
                         <Link
                           href={`/enquiries/${enquiry.enquiryId}`}
                           className="table-link"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {enquiry.fullName}
                         </Link>
@@ -220,6 +276,26 @@ export default function EnquiriesPage() {
                       </td>
                       <td style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>
                         {formatDate(enquiry.submittedAt)}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="toggle-read-btn"
+                          disabled={updatingIds.includes(enquiry.enquiryId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleRead(enquiry.enquiryId, enquiry.isRead);
+                          }}
+                          title={enquiry.isRead ? "Mark as unread" : "Mark as read"}
+                        >
+                          {updatingIds.includes(enquiry.enquiryId) ? (
+                            <span className="spinner" style={{ width: 12, height: 12 }} />
+                          ) : enquiry.isRead ? (
+                            "Mark Unread"
+                          ) : (
+                            "Mark Read"
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}
