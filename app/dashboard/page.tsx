@@ -158,7 +158,7 @@ export default function DashboardPage() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       {!enquiry.isRead ? (
-                        <span className="read-status-badge unread">● NEW</span>
+                        <span className="read-status-badge unread">NEW</span>
                       ) : (
                         <span className="read-status-badge read">Read</span>
                       )}

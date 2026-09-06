@@ -125,7 +125,7 @@ export default function EnquiryDetailPage({
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <p className="eyebrow" style={{ margin: 0 }}>Enquiry #{enquiryId}</p>
               {!isReadState ? (
-                <span className="read-status-badge unread">● NEW</span>
+                <span className="read-status-badge unread">NEW</span>
               ) : (
                 <span className="read-status-badge read">✓ Read</span>
               )}
