@@ -326,7 +326,7 @@ export default function EnquiriesPage() {
                         onClick={() => router.push(`/enquiries/${enquiry.enquiryId}`)}
                       >
                         <td style={{ color: "var(--text-subtle)", fontFamily: "monospace", fontWeight: 600 }}>
-                          #{enquiry.enquiryId}
+                          {enquiry.enquiryId}
                         </td>
                         <td>
                           {!enquiry.isRead ? (

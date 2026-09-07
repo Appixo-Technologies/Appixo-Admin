@@ -29,6 +29,7 @@ export default function EnquiryDetailPage({
   const [isReadState, setIsReadState] = useState(true);
   const [isTogglingRead, setIsTogglingRead] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [copiedField, setCopiedField] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -71,7 +72,7 @@ export default function EnquiryDetailPage({
       if (enquiry) {
         setEnquiry({ ...enquiry, status: newStatus });
       }
-      setSuccessMessage(`Status successfully updated to "${newStatus}"`);
+      setSuccessMessage(`Status updated to "${newStatus.replace("_", " ")}"`);
       setTimeout(() => setSuccessMessage(""), 3500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update status";
@@ -91,7 +92,7 @@ export default function EnquiryDetailPage({
       if (enquiry) {
         setEnquiry({ ...enquiry, isRead: nextState });
       }
-      setSuccessMessage(`Marked as ${nextState ? "Read" : "Unread"}`);
+      setSuccessMessage(`Marked enquiry as ${nextState ? "Read" : "Unread"}`);
       setTimeout(() => setSuccessMessage(""), 3500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to toggle read state";
@@ -99,6 +100,12 @@ export default function EnquiryDetailPage({
     } finally {
       setIsTogglingRead(false);
     }
+  };
+
+  const copyToClipboard = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(""), 2500);
   };
 
   const formatDate = (dateString?: string) => {
@@ -117,20 +124,19 @@ export default function EnquiryDetailPage({
     }
   };
 
+  const getClientInitial = (name?: string) => {
+    if (!name) return "C";
+    return name.charAt(0).toUpperCase();
+  };
+
   return (
     <AuthGuard>
       <AdminShell>
+        {/* Page Header */}
         <div className="page-header">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <p className="eyebrow" style={{ margin: 0 }}>Enquiry #{enquiryId}</p>
-              {!isReadState ? (
-                <span className="read-status-badge unread">NEW</span>
-              ) : (
-                <span className="read-status-badge read">✓ Read</span>
-              )}
-            </div>
-            <h1>{enquiry ? enquiry.inquiryType || "Client Enquiry Details" : "Enquiry Details"}</h1>
+            <p className="eyebrow">Lead Record • ID {enquiryId}</p>
+            <h1>{enquiry ? enquiry.fullName : "Enquiry Record"}</h1>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button
@@ -148,7 +154,7 @@ export default function EnquiryDetailPage({
               )}
             </button>
             <Link href="/enquiries" className="secondary-button">
-              ← Back to Enquiries
+              ← Back to Directory
             </Link>
           </div>
         </div>
@@ -168,83 +174,208 @@ export default function EnquiryDetailPage({
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <p>Loading enquiry record...</p>
+            <p>Fetching client enquiry record from server...</p>
           </div>
         ) : !enquiry ? (
           <div className="empty-state">
-            <p>Enquiry record not found.</p>
+            <p>Client enquiry record not found.</p>
             <Link href="/enquiries" className="primary-button" style={{ marginTop: 12 }}>
               Return to Enquiries List
             </Link>
           </div>
         ) : (
-          <section className="panel detail-panel">
-            <div className="detail-grid">
-              <div style={{ background: "rgba(255,255,255,0.02)", padding: 20, borderRadius: 14, border: "1px solid var(--border-subtle)" }}>
-                <span className="detail-label">Client Details</span>
-                <h3 style={{ margin: "0 0 16px", fontSize: "1.4rem", color: "var(--text-main)" }}>
-                  {enquiry.fullName}
-                </h3>
-                <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                  <strong style={{ color: "var(--text-main)" }}>Email:</strong> {enquiry.email}
-                </p>
-                {enquiry.phone ? (
-                  <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                    <strong style={{ color: "var(--text-main)" }}>Phone:</strong> {enquiry.phone}
-                  </p>
-                ) : null}
-                {enquiry.location ? (
-                  <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                    <strong style={{ color: "var(--text-main)" }}>Location:</strong> {enquiry.location}
-                  </p>
-                ) : null}
+          <div>
+            {/* Hero Client Summary Header Card */}
+            <div className="detail-hero-card">
+              <div className="detail-hero-info">
+                <div className="detail-hero-avatar">
+                  {getClientInitial(enquiry.fullName)}
+                </div>
+                <div className="detail-hero-text">
+                  <h2>{enquiry.fullName}</h2>
+                  <div className="detail-hero-meta">
+                    <span className="category-chip">
+                      {enquiry.inquiryType || "General Enquiry"}
+                    </span>
+                    {!isReadState ? (
+                      <span className="read-status-badge unread">NEW</span>
+                    ) : (
+                      <span className="read-status-badge read">Read</span>
+                    )}
+                    <span className={`status-badge ${enquiry.status.toLowerCase()}`}>
+                      {enquiry.status}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.02)", padding: 20, borderRadius: 14, border: "1px solid var(--border-subtle)" }}>
-                <span className="detail-label">Enquiry Metadata</span>
-                <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                  <strong style={{ color: "var(--text-main)" }}>Company:</strong> {enquiry.company || "Not specified"}
-                </p>
-                <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                  <strong style={{ color: "var(--text-main)" }}>Category:</strong> <span style={{ color: "var(--gold-light)", fontWeight: 600 }}>{enquiry.inquiryType || "General"}</span>
-                </p>
-                <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-                  <strong style={{ color: "var(--text-main)" }}>Submitted At:</strong> {formatDate(enquiry.submittedAt)}
-                </p>
-
-                <div className="status-changer">
-                  <span className="detail-label" style={{ marginBottom: 0 }}>
-                    Status:
-                  </span>
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    disabled={isUpdating}
-                    className="status-select"
+              {/* Direct Communication Quick Links */}
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {enquiry.email ? (
+                  <a
+                    href={`mailto:${enquiry.email}?subject=Regarding Your Appixo Enquiry #${enquiryId}`}
+                    className="action-chip-btn primary"
                   >
-                    {!STATUS_OPTIONS.some((o) => o.value === selectedStatus) && selectedStatus ? (
-                      <option value={selectedStatus}>{selectedStatus}</option>
+                    <span>✉️ Reply via Email</span>
+                  </a>
+                ) : null}
+                {enquiry.phone ? (
+                  <a
+                    href={`tel:${enquiry.phone}`}
+                    className="action-chip-btn"
+                  >
+                    <span>📞 Call Client</span>
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
+            {/* 3-Column Detailed Information Cards */}
+            <div className="detail-cards-grid">
+              {/* Card 1: Client Contact & Identity */}
+              <div className="detail-info-card">
+                <div>
+                  <div className="detail-card-header">
+                    <span className="detail-card-title">👤 Contact Identity</span>
+                    <span style={{ fontSize: "0.85rem" }}>📇</span>
+                  </div>
+                  <div className="detail-field-group" style={{ marginTop: 14 }}>
+                    <div className="detail-field-item">
+                      <label>Email Address</label>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <span>{enquiry.email}</span>
+                        <button
+                          type="button"
+                          className="toggle-read-btn"
+                          style={{ padding: "3px 8px", fontSize: "0.72rem" }}
+                          onClick={() => copyToClipboard(enquiry.email, "email")}
+                          title="Copy email to clipboard"
+                        >
+                          {copiedField === "email" ? "Copied! ✓" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {enquiry.phone ? (
+                      <div className="detail-field-item">
+                        <label>Phone Contact</label>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                          <span>{enquiry.phone}</span>
+                          <button
+                            type="button"
+                            className="toggle-read-btn"
+                            style={{ padding: "3px 8px", fontSize: "0.72rem" }}
+                            onClick={() => copyToClipboard(enquiry.phone || "", "phone")}
+                            title="Copy phone to clipboard"
+                          >
+                            {copiedField === "phone" ? "Copied! ✓" : "Copy"}
+                          </button>
+                        </div>
+                      </div>
                     ) : null}
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  {isUpdating ? <div className="spinner" style={{ width: 18, height: 18 }} /> : null}
+
+                    {enquiry.location ? (
+                      <div className="detail-field-item">
+                        <label>Location / Region</label>
+                        <span>📍 {enquiry.location}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Business & Project Metadata */}
+              <div className="detail-info-card">
+                <div>
+                  <div className="detail-card-header">
+                    <span className="detail-card-title">🏢 Business & Category</span>
+                    <span style={{ fontSize: "0.85rem" }}>🏷️</span>
+                  </div>
+                  <div className="detail-field-group" style={{ marginTop: 14 }}>
+                    <div className="detail-field-item">
+                      <label>Company / Organization</label>
+                      <strong>{enquiry.company || "Individual / Not Specified"}</strong>
+                    </div>
+
+                    <div className="detail-field-item">
+                      <label>Inquiry Classification</label>
+                      <div>
+                        <span className="category-chip">
+                          {enquiry.inquiryType || "General Service"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="detail-field-item">
+                      <label>Submission Date & Time</label>
+                      <span>🗓️ {formatDate(enquiry.submittedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Status & Management Workflow */}
+              <div className="detail-info-card">
+                <div>
+                  <div className="detail-card-header">
+                    <span className="detail-card-title">⚙️ Lifecycle Workflow</span>
+                    <span style={{ fontSize: "0.85rem" }}>🔄</span>
+                  </div>
+                  <div className="detail-field-group" style={{ marginTop: 14 }}>
+                    <div className="detail-field-item">
+                      <label>Current Status</label>
+                      <div>
+                        <span className={`status-badge ${selectedStatus.toLowerCase()}`}>
+                          {selectedStatus}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="detail-field-item">
+                      <label>Change Status Level</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <select
+                          value={selectedStatus}
+                          onChange={(e) => handleStatusChange(e.target.value)}
+                          disabled={isUpdating}
+                          className="status-select"
+                          style={{ width: "100%", padding: "10px 12px" }}
+                        >
+                          {!STATUS_OPTIONS.some((o) => o.value === selectedStatus) && selectedStatus ? (
+                            <option value={selectedStatus}>{selectedStatus}</option>
+                          ) : null}
+                          {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        {isUpdating ? <div className="spinner" style={{ width: 18, height: 18 }} /> : null}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="message-box">
-              <h4>Project Context & Scope Requirements</h4>
-              <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "var(--text-main)", margin: 0 }}>
-                {enquiry.projectContext || "No additional project context provided."}
-              </p>
+            {/* Rich Context & Project Scope Message Container */}
+            <div className="context-message-box">
+              <div className="context-header">
+                <h3>
+                  <span>💬</span> Project Context & Requirements Scope
+                </h3>
+                <span style={{ color: "var(--text-muted)", fontSize: "0.82rem", fontWeight: 600 }}>
+                  {enquiry.projectContext ? `${enquiry.projectContext.length} Characters` : "Empty Message"}
+                </span>
+              </div>
+              <div className="context-content">
+                {enquiry.projectContext || "No additional project scope or requirements were included with this enquiry."}
+              </div>
             </div>
-          </section>
+          </div>
         )}
       </AdminShell>
     </AuthGuard>
   );
 }
+
